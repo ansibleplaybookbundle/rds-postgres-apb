@@ -68,6 +68,7 @@ metadata:
   imageUrl: "https://s3.amazonaws.com/fusor/2017demo/Database_AmazonRDS_PostgreSQLinstance.png"
   documentationUrl: "https://aws.amazon.com/rds/"
   dependencies: []
+  providerDisplayName: "Amazon"
 plans:
   - name: default
     description: RDS Postgresql deployment to AWS
