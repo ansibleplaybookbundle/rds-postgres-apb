@@ -24,10 +24,12 @@
       Application: ansible-rds
       Description: "{{ ansible_user_id }} RDS {{ db_engine }} {{ tds }}"
   register: rds
+  when: state=="present"
 
 - name: retrieve rds endpoint IP
   shell: "getent hosts {{ rds.instance.endpoint }} | awk '{ print $1 }'"
   register: rds_endpoint_ip
+  when: state=="present"
 
 - name: create openshift service
   k8s_v1_service:
@@ -36,9 +38,10 @@
     ports:
     - name: "{{ db_engine }}"
       protocol: "TCP"
-      port: "{{ port }}"
-      target_port: "{{ port }}"
+      port: 5432
+      target_port: 5432
       node_port: 0
+  when: state=="present"
 
 - name: encode bind credentials
   asb_encode_binding:
@@ -49,3 +52,25 @@
       DB_PASSWORD: "{{ db_password }}"
       DB_NAME: "{{ db_name }}"
       DB_TYPE: postgres
+  when: state=="present"
+
+- name: delete rds
+  rds:
+    aws_access_key: "{{ aws_access_key }}"
+    aws_secret_key: "{{ aws_secret_key }}"
+    command: delete
+    instance_name: "{{ ansible_user_id }}-{{ db_engine }}-{{ tds }}"
+    region: "{{ region }}"
+  when: state=="absent"
+
+- name: delete openshift service
+  k8s_v1_service:
+    name: "rds-{{ tds }}"
+    namespace: "{{ namespace }}"
+    ports:
+    - name: "{{ db_engine }}"
+      protocol: "TCP"
+      port: 5432
+      target_port: 5432
+      node_port: 0
+  when: state=="absent"
